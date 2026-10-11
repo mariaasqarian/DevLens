@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+
+<html lang="fa" dir="rtl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>DevLens | تحلیلگر کد Python</title>
+
+    <style>
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+
+            color-scheme: dark;
+
+            --bg: #0b1020;
+
+            --panel: #121a2d;
+
+            --panel-soft: #0d1527;
+
+            --border: #27334b;
+
+            --text: #f1f5f9;
+
+            --muted: #94a3b8;
+
+            --purple: #9285ff;
+
+            --green: #a7f3d0;
+
+            --red: #fecaca;
+
+        }
+
+        body {
+
+            font-family: Tahoma, Arial, sans-serif;
+
+            background: var(--bg);
+
+            color: var(--text);
+
+            min-height: 100vh;
+
+            line-height: 1.8;
+
+        }
+
+        button, textarea, input { font: inherit; }
+
+        button { cursor: pointer; }
+
+        button:disabled { opacity: .6; cursor: not-allowed; }
+
+        .container { width: min(1100px, 92%); margin: 0 auto; }
+
+        header { padding: 22px 0; border-bottom: 1px solid #252d43; background: #10172a; }
+
+        .header-content, .logo, .status, .panel-heading, .file-upload,
+
+        .editor-footer, .actions, .issue-top {
+
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+
+        }
+
+        .header-content, .panel-heading, .editor-footer, .issue-top {
+
+            justify-content: space-between;
+
+        }
+
+        .logo { gap: 12px; }
+
+        .logo-icon {
+
+            width: 46px; height: 46px; display: grid; place-items: center;
+
+            border-radius: 14px; background: linear-gradient(135deg, #7667ff, #3c82f6);
+
+            font-size: 23px;
+
+        }
+
+        .logo h1 { font-size: 23px; direction: ltr; text-align: right; }
+
+        .logo p, .summary-card p { color: var(--muted); font-size: 12px; }
+
+        .status { color: var(--green); font-size: 12px; gap: 8px; }
+
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
+
+        main { padding: 40px 0 60px; }
+
+        .hero { margin-bottom: 28px; }
+
+        .hero h2 { font-size: clamp(24px, 4vw, 34px); margin-bottom: 10px; }
+
+        .hero h2 span { color: var(--purple); }
+
+        .hero p { color: #9caac0; font-size: 14px; }
+
+        .panel {
+
+            background: var(--panel); border: 1px solid var(--border);
+
+            border-radius: 18px; padding: 24px; margin-bottom: 22px;
+
+        }
+
+        .panel-heading { margin-bottom: 20px; }
+
+        .panel-heading h3 { font-size: 17px; }
+
+        .badge {
+
+            font-size: 11px; color: #b8b0ff; background: #28244c;
+
+            border: 1px solid #454078; padding: 4px 10px; border-radius: 20px;
+
+        }
+
+        .file-upload {
+
+            padding: 16px; border: 1px dashed #475477; background: #0e1628;
+
+            border-radius: 12px; margin-bottom: 18px;
+
+        }
+
+        .file-label {
+
+            display: inline-flex; align-items: center; justify-content: center;
+
+            padding: 9px 16px; border: 1px solid #7167f8; border-radius: 9px;
+
+            background: #292553; color: white; cursor: pointer; font-size: 13px;
+
+            transition: .2s;
+
+        }
+
+        .file-label:hover { background: #3b3478; }
+
+        .file-name { color: #aab5ca; font-size: 12px; overflow-wrap: anywhere; }
+
+        .file-help { width: 100%; color: #8290a8; font-size: 11px; }
+
+        .editor-label { display: block; margin-bottom: 9px; font-size: 13px; color: #cbd5e1; }
+
+        textarea {
+
+            display: block; width: 100%; min-height: 320px; resize: vertical;
+
+            padding: 18px; background: #080e1b; color: #d9e4f5;
+
+            border: 1px solid #293650; border-radius: 12px; outline: none;
+
+            direction: ltr; text-align: left;
+
+            font-family: Consolas, "Courier New", monospace; font-size: 14px;
+
+            line-height: 1.8; tab-size: 4;
+
+        }
+
+        textarea:focus { border-color: #8175ff; box-shadow: 0 0 0 3px #8175ff1a; }
+
+        .editor-footer { margin-top: 16px; }
+
+        .hint { color: #8290a8; font-size: 12px; }
+
+        .actions { gap: 10px; }
+
+        .btn { border: 0; border-radius: 10px; padding: 11px 20px; font-size: 13px; transition: .2s; }
+
+        .btn-primary { color: white; background: linear-gradient(135deg, #7667ff, #5367e8); }
+
+        .btn-primary:hover { filter: brightness(1.12); }
+
+        .btn-secondary { background: #202b40; color: #cbd5e1; border: 1px solid #34415a; }
+
+        .btn-secondary:hover { background: #2b3850; }
+
+        .results { display: none; }
+
+        .results.visible { display: block; }
+
+        .summary-grid {
+
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+
+            gap: 14px; margin-bottom: 22px;
+
+        }
+
+        .summary-card {
+
+            background: var(--panel-soft); border: 1px solid var(--border);
+
+            border-radius: 12px; padding: 17px; min-width: 0;
+
+        }
+
+        .summary-card p { margin-bottom: 8px; }
+
+        .summary-card strong {
+
+            display: block; font-size: 25px; color: #b8adff; overflow-wrap: anywhere;
+
+        }
+
+        .metrics-heading { margin: 4px 0 12px; font-size: 15px; }
+
+        .metrics-grid {
+
+            display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+
+            gap: 12px; margin-bottom: 22px;
+
+        }
+
+        .metric {
+
+            background: #0e1628; border: 1px solid var(--border);
+
+            border-radius: 11px; padding: 14px;
+
+        }
+
+        .metric span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 5px; }
+
+        .metric strong { font-size: 22px; color: #d5d0ff; }
+
+        .result-message {
+
+            border-radius: 10px; padding: 13px 15px; background: var(--panel-soft);
+
+            border: 1px solid var(--border); color: #cbd5e1; font-size: 13px;
+
+            margin-bottom: 18px; overflow-wrap: anywhere;
+
+        }
+
+        .result-message.success { border-color: #27624d; color: var(--green); }
+
+        .result-message.warning { border-color: #725b2d; color: #fde68a; }
+
+        .issue-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .issue {
+
+            background: var(--panel-soft); border: 1px solid #293650;
+
+            border-radius: 11px; padding: 15px;
+
+        }
+
+        .issue-top { margin-bottom: 7px; }
+
+        .issue-code { color: #c4baff; font-size: 12px; direction: ltr; }
+
+        .issue-location { color: #93a4bd; font-size: 11px; }
+
+        .issue-message { font-size: 13px; overflow-wrap: anywhere; margin-bottom: 8px; }
+
+        .issue-explanation, .issue-suggestion {
+
+            font-size: 12px; line-height: 1.9; margin-top: 8px; padding: 10px 12px;
+
+            border-radius: 8px; overflow-wrap: anywhere;
+
+        }
+
+        .issue-explanation { background: #111d31; color: #d5deec; border-right: 3px solid #7667ff; }
+
+        .issue-suggestion { background: #142820; color: #b7f0d1; border-right: 3px solid #3c9a70; }
+
+        .issue-explanation strong, .issue-suggestion strong { display: block; margin-bottom: 3px; }
+
+        .empty-state {
+
+            padding: 24px; text-align: center; border: 1px dashed #34415a;
+
+            border-radius: 12px; color: var(--green); font-size: 14px;
+
+        }
+
+        .error-box {
+
+            display: none; padding: 13px 15px; border: 1px solid #7f343f;
+
+            background: #351923; color: var(--red); border-radius: 10px;
+
+            margin-top: 16px; font-size: 13px; overflow-wrap: anywhere;
+
+        }
+
+        .error-box.visible { display: block; }
+
+        footer {
+
+            text-align: center; color: #718096; font-size: 11px; padding: 20px 0;
+
+            border-top: 1px solid #252d43;
+
+        }
+
+        .quality-card {
+            display: grid;
+            grid-template-columns: minmax(130px, 190px) 1fr;
+            align-items: center;
+            gap: 22px;
+            padding: 22px;
+            margin-bottom: 22px;
+            background: linear-gradient(135deg, #171d38, #101a2d);
+            border: 1px solid #38365f;
+            border-radius: 14px;
+        }
+        .quality-score-wrap { text-align: center; }
+        .quality-score { display: block; font-size: clamp(36px, 5vw, 54px); line-height: 1.3; color: #b8adff; direction: ltr; }
+        .quality-score small { font-size: 18px; color: #94a3b8; }
+        .quality-caption { color: #94a3b8; font-size: 12px; }
+        .quality-progress { height: 9px; background: #26314a; border-radius: 20px; overflow: hidden; margin: 10px 0 13px; }
+        .quality-progress-bar { width: 0; height: 100%; background: linear-gradient(90deg, #7667ff, #5eead4); border-radius: inherit; transition: width .35s ease; }
+        .quality-rank { font-size: 19px; margin-bottom: 4px; color: #f1f5f9; }
+        .quality-description { color: #aab5ca; font-size: 13px; }
+        .quality-note { color: #8290a8; font-size: 11px; margin-top: 10px; }
+        @media (max-width: 650px) {
+            .quality-card { grid-template-columns: 1fr; gap: 12px; }
+
+            main { padding-top: 28px; }
+
+            .panel { padding: 16px; }
+
+            .summary-grid, .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+            textarea { min-height: 260px; }
+
+            .editor-footer { align-items: stretch; flex-direction: column; }
+
+            .actions, .actions .btn { width: 100%; }
+
+        }
+
+        @media (max-width: 400px) {
+
+            .summary-grid, .metrics-grid { grid-template-columns: 1fr; }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+
+    <div class="container header-content">
+
+        <div class="logo">
+
+            <div class="logo-icon" aria-hidden="true">⌘</div>
+
+            <div>
+
+                <h1>DevLens</h1>
+
+                <p>Python Code Analyzer</p>
+
+            </div>
+
+        </div>
+
+        <div class="status"><span class="status-dot"></span> ابزار تحلیل کد Python</div>
+
+    </div>
+
+</header>
+
+
+
+<main class="container">
+
+    <section class="hero">
+
+        <h2>کدت رو بررسی کن، <span>بهترش کن.</span></h2>
+
+        <p>کد Python رو وارد کن یا یک فایل با پسوند py انتخاب کن تا با Ruff و AST بررسی بشه.</p>
+
+    </section>
+
+
+
+    <section class="panel">
+
+        <div class="panel-heading">
+
+            <h3>ویرایشگر کد</h3>
+
+            <span class="badge">Python · Ruff · AST</span>
+
+        </div>
+
+
+
+        <div class="file-upload">
+
+            <label for="pythonFile" class="file-label">📂 انتخاب فایل Python</label>
+
+            <input type="file" id="pythonFile" accept=".py,text/x-python" hidden>
+
+            <span id="fileName" class="file-name">هنوز فایلی انتخاب نشده است</span>
+
+            <p class="file-help">
+
+                فقط فایل‌های .py با حجم حداکثر ۲ مگابایت. فایل در مرورگر خوانده می‌شود و متن آن در کادر قرار می‌گیرد.
+
+            </p>
+
+        </div>
+
+
+
+        <label for="codeEditor" class="editor-label">کد Python</label>
+
+        <textarea id="codeEditor" name="code" spellcheck="false" autocomplete="off" dir="ltr" lang="en"
+
+            autocapitalize="off" placeholder=" کد پایتون را اینجا وارد کن یا از دکمه انتخاب فایل استفاده کن">
+
+</textarea>
+
+
+
+        <div class="editor-footer">
+
+            <span id="codeStats" class="hint">۰ خط · ۰ کاراکتر</span>
+
+            <div class="actions">
+
+                <button type="button" id="clearBtn" class="btn btn-secondary">پاک کردن</button>
+
+                <button type="button" id="analyzeBtn" class="btn btn-primary">🔍 تحلیل کد</button>
+
+            </div>
+
+        </div>
+
+        <div id="errorBox" class="error-box" role="alert" aria-live="polite"></div>
+
+    </section>
+
+
+
+    <section id="results" class="panel results" aria-live="polite">
+
+        <div class="panel-heading">
+
+            <h3>نتیجه تحلیل</h3>
+
+            <span class="badge">Analysis Report</span>
+
+        </div>
+
+
+
+        <section class="quality-card" aria-label="امتیاز کیفیت کد">
+            <div class="quality-score-wrap">
+                <strong id="qualityScore" class="quality-score">—<small>/۱۰۰</small></strong>
+                <span class="quality-caption">امتیاز کیفیت کد</span>
+            </div>
+            <div>
+                <h4 id="qualityRank" class="quality-rank">در انتظار تحلیل</h4>
+                <div class="quality-progress" role="progressbar" aria-label="امتیاز کیفیت کد" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="qualityProgress">
+                    <div id="qualityProgressBar" class="quality-progress-bar"></div>
+                </div>
+                <p id="qualityDescription" class="quality-description">پس از تحلیل، امتیاز کیفیت کد اینجا نمایش داده می‌شود.</p>
+                <p class="quality-note">این امتیاز تخمینی و مبتنی بر قواعد تحلیل‌گر است؛ تضمین‌کننده نبود باگ یا امنیت کامل نیست.</p>
+            </div>
+        </section>
+
+        <div class="summary-grid">
+
+            <div class="summary-card">
+
+                <p>تعداد مشکلات</p>
+
+                <strong id="issueCount">۰</strong>
+
+            </div>
+
+            <div class="summary-card">
+
+                <p>وضعیت ساختار نحوی</p>
+
+                <strong id="analysisStatus">—</strong>
+
+            </div>
+
+            <div class="summary-card">
+
+                <p>فایل بررسی‌شده</p>
+
+                <strong id="analyzedFile" style="font-size:15px;direction:ltr;text-align:right;">متن واردشده</strong>
+
+            </div>
+
+        </div>
+
+
+
+        <h4 class="metrics-heading">آمار ساختاری کد (AST)</h4>
+
+        <div class="metrics-grid">
+
+            <div class="metric"><span>تعداد خطوط</span><strong id="metricLines">—</strong></div>
+
+            <div class="metric"><span>تعداد توابع</span><strong id="metricFunctions">—</strong></div>
+
+            <div class="metric"><span>تعداد کلاس‌ها</span><strong id="metricClasses">—</strong></div>
+
+            <div class="metric"><span>تعداد importها</span><strong id="metricImports">—</strong></div>
+
+        </div>
+
+
+
+        <div id="summaryMessage" class="result-message"></div>
+
+        <div class="panel-heading"><h3>جزئیات مشکلات</h3></div>
+
+        <div id="issueList" class="issue-list"></div>
+
+    </section>
+
+</main>
+
+
+
+<footer>DevLens — Python Code Analysis Tool</footer>
+
+
+
+<script>
+
+"use strict";
+
+
+
+const pythonFileInput = document.getElementById("pythonFile");
+
+const fileNameLabel = document.getElementById("fileName");
+
+const codeEditor = document.getElementById("codeEditor");
+
+const analyzeBtn = document.getElementById("analyzeBtn");
+
+const clearBtn = document.getElementById("clearBtn");
+
+const codeStats = document.getElementById("codeStats");
+
+const errorBox = document.getElementById("errorBox");
+
+const resultsSection = document.getElementById("results");
+
+
+
+let selectedFileName = "";
+
+
+
+function formatNumber(value) {
+
+    const number = Number(value);
+
+    return Number.isFinite(number) ? number.toLocaleString("fa-IR") : "—";
+
+}
+
+
+
+function updateCodeStats() {
+
+    const code = codeEditor.value;
+
+    const lines = code.length === 0 ? 0 : code.split("\n").length;
+
+    codeStats.textContent =
+
+        `${formatNumber(lines)} خط · ${formatNumber(code.length)} کاراکتر`;
+
+}
+
+
+
+codeEditor.addEventListener("input", updateCodeStats);
+
+
+
+function showError(message) {
+
+    errorBox.textContent = message;
+
+    errorBox.classList.add("visible");
+
+}
+
+
+
+function hideError() {
+
+    errorBox.textContent = "";
+
+    errorBox.classList.remove("visible");
+
+}
+
+
+
+function getCookie(name) {
+
+    const cookies = document.cookie ? document.cookie.split(";") : [];
+
+    for (const cookie of cookies) {
+
+        const item = cookie.trim();
+
+        if (item.startsWith(name + "=")) {
+
+            return decodeURIComponent(item.substring(name.length + 1));
+
+        }
+
+    }
+
+    return "";
+
+}
+
+
+
+// خواندن فایل انتخاب‌شده بدون ارسال آن به سرور تا زمانی که کاربر تحلیل را بزند.
+
+pythonFileInput.addEventListener("change", async function () {
+
+    hideError();
+
+    const file = this.files && this.files[0];
+
+    if (!file) return;
+
+
+
+    if (!file.name.toLowerCase().endsWith(".py")) {
+
+        showError("لطفاً یک فایل با پسوند .py انتخاب کن.");
+
+        this.value = "";
+
+        return;
+
+    }
+
+
+
+    const maxSize = 2 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+
+        showError("حجم فایل نباید بیشتر از ۲ مگابایت باشد.");
+
+        this.value = "";
+
+        return;
+
+    }
+
+
+
+    try {
+
+        const code = await file.text();
+
+        codeEditor.value = code;
+
+        selectedFileName = file.name;
+
+        fileNameLabel.textContent = file.name;
+
+        updateCodeStats();
+
+        resultsSection.classList.remove("visible");
+
+    } catch (error) {
+
+        showError("خواندن فایل با مشکل مواجه شد.");
+
+        console.error("DevLens file read error:", error);
+
+    }
+
+});
+
+
+
+clearBtn.addEventListener("click", function () {
+
+    codeEditor.value = "";
+
+    pythonFileInput.value = "";
+
+    selectedFileName = "";
+
+    fileNameLabel.textContent = "هنوز فایلی انتخاب نشده است";
+
+    updateCodeStats();
+
+    hideError();
+
+    resultsSection.classList.remove("visible");
+
+});
+
+
+
+function renderIssues(issues) {
+
+    const issueList = document.getElementById("issueList");
+
+    issueList.replaceChildren();
+
+
+
+    if (!Array.isArray(issues) || issues.length === 0) {
+
+        const empty = document.createElement("div");
+
+        empty.className = "empty-state";
+
+        empty.textContent =
+
+            "مشکلی در نتایج گزارش نشده است. این نتیجه تضمین نمی‌کند که برنامه هیچ باگی ندارد.";
+
+        issueList.appendChild(empty);
+
+        return;
+
+    }
+
+
+
+    for (const issue of issues) {
+
+        const card = document.createElement("div");
+
+        card.className = "issue";
+
+
+
+        const top = document.createElement("div");
+
+        top.className = "issue-top";
+
+
+
+        const code = document.createElement("span");
+
+        code.className = "issue-code";
+
+        code.textContent = String(issue.code ?? issue.code_name ?? issue.rule ?? "Issue");
+
+
+
+        const location = document.createElement("span");
+
+        location.className = "issue-location";
+
+        const row = issue.row ?? issue.location?.row ?? issue.line;
+
+        const column = issue.column ?? issue.location?.column;
+
+
+
+        if (row != null) {
+
+            location.textContent = `خط ${row}` +
+
+                (column != null ? `، ستون ${column}` : "");
+
+        } else {
+
+            location.textContent = "محل دقیق مشخص نشده";
+
+        }
+
+
+
+        top.append(code, location);
+
+
+
+        const message = document.createElement("p");
+
+        message.className = "issue-message";
+
+        const messageValue = issue.message ?? issue.description ?? issue.text ?? "مشکل نامشخص";
+
+        message.textContent = typeof messageValue === "string"
+
+            ? messageValue
+
+            : JSON.stringify(messageValue);
+
+
+
+        card.append(top, message);
+
+
+
+        if (typeof issue.explanation === "string" && issue.explanation.trim()) {
+
+            const explanation = document.createElement("div");
+
+            explanation.className = "issue-explanation";
+
+            const explanationTitle = document.createElement("strong");
+
+            explanationTitle.textContent = "توضیح فارسی";
+
+            const explanationText = document.createElement("span");
+
+            explanationText.textContent = issue.explanation;
+
+            explanation.append(explanationTitle, explanationText);
+
+            card.appendChild(explanation);
+
+        }
+
+
+
+        if (typeof issue.suggestion === "string" && issue.suggestion.trim()) {
+
+            const suggestion = document.createElement("div");
+
+            suggestion.className = "issue-suggestion";
+
+            const suggestionTitle = document.createElement("strong");
+
+            suggestionTitle.textContent = "راه‌حل پیشنهادی";
+
+            const suggestionText = document.createElement("span");
+
+            suggestionText.textContent = issue.suggestion;
+
+            suggestion.append(suggestionTitle, suggestionText);
+
+            card.appendChild(suggestion);
+
+        }
+
+
+
+        issueList.appendChild(card);
+
+    }
+
+}
+
+
+
+function renderQuality(quality, issues, syntaxValid) {
+    // امتیاز می‌تواند عدد یا شیئی شامل score و توضیحات باشد.
+    const qualityObject = quality && typeof quality === "object" ? quality : {};
+    const rawScore = typeof quality === "number" || typeof quality === "string"
+        ? quality
+        : (qualityObject.score ?? qualityObject.quality_score ?? qualityObject.value);
+    const parsedScore = Number(rawScore);
+    const hasScore = rawScore !== undefined && rawScore !== null && rawScore !== "" && Number.isFinite(parsedScore);
+    const score = hasScore ? Math.max(0, Math.min(100, Math.round(parsedScore))) : null;
+
+    const scoreElement = document.getElementById("qualityScore");
+    const rankElement = document.getElementById("qualityRank");
+    const descriptionElement = document.getElementById("qualityDescription");
+    const progress = document.getElementById("qualityProgress");
+    const progressBar = document.getElementById("qualityProgressBar");
+
+    if (score === null) {
+        scoreElement.innerHTML = '—<small>/۱۰۰</small>';
+        rankElement.textContent = "امتیاز دریافت نشد";
+        descriptionElement.textContent = "سرور مقدار quality را در پاسخ برنگردانده است. کلید quality در پاسخ JSON مربوط به views.py را بررسی کن.";
+        progressBar.style.width = "0%";
+        progress.setAttribute("aria-valuenow", "0");
+        return;
+    }
+
+    scoreElement.innerHTML = `${formatNumber(score)}<small>/۱۰۰</small>`;
+    progressBar.style.width = `${score}%`;
+    progress.setAttribute("aria-valuenow", String(score));
+
+    const suppliedRank = qualityObject.rank ?? qualityObject.label ?? qualityObject.grade ?? qualityObject.rating;
+    let rank = typeof suppliedRank === "string" ? suppliedRank : "";
+    if (!rank) {
+        if (score >= 90) rank = "عالی";
+        else if (score >= 75) rank = "خوب";
+        else if (score >= 60) rank = "متوسط";
+        else rank = "نیازمند بهبود";
+    }
+    rankElement.textContent = rank;
+
+    const suppliedDescription = qualityObject.explanation ?? qualityObject.description ?? qualityObject.summary;
+    if (typeof suppliedDescription === "string" && suppliedDescription.trim()) {
+        descriptionElement.textContent = suppliedDescription;
+    } else if (syntaxValid === false) {
+        descriptionElement.textContent = "کد دارای خطای نحوی است؛ ابتدا خطاهای نحوی را برطرف کن و دوباره تحلیل بگیر.";
+    } else if (issues.length > 0) {
+        descriptionElement.textContent = `در تحلیل ${formatNumber(issues.length)} مورد گزارش شده است. جزئیات و پیشنهادهای اصلاح را در ادامه ببین.`;
+    } else {
+        descriptionElement.textContent = "تحلیل‌گر موردی گزارش نکرده است؛ این موضوع به‌تنهایی نبود همه باگ‌ها را تضمین نمی‌کند.";
+    }
+
+    progressBar.style.background = score >= 75
+        ? "linear-gradient(90deg, #3c9a70, #5eead4)"
+        : score >= 60
+            ? "linear-gradient(90deg, #b78b35, #fcd34d)"
+            : "linear-gradient(90deg, #b45353, #fb7185)";
+    scoreElement.style.color = score >= 75 ? "#a7f3d0" : score >= 60 ? "#fde68a" : "#fecaca";
+}
+
+
+function renderMetrics(metrics) {
+    const safeMetrics = metrics && typeof metrics === "object"
+        ? metrics
+        : {};
+
+    document.getElementById("metricLines").textContent =
+        formatNumber(safeMetrics.line_count);
+
+    document.getElementById("metricFunctions").textContent =
+        formatNumber(safeMetrics.function_count);
+
+    document.getElementById("metricClasses").textContent =
+        formatNumber(safeMetrics.class_count);
+
+    document.getElementById("metricImports").textContent =
+        formatNumber(safeMetrics.import_count);
+}
+
+
+analyzeBtn.addEventListener("click", async function () {
+console.log("DevLens: کلیک روی دکمه تحلیل اجرا شد.");
+    hideError();
+
+    const code = codeEditor.value;
+
+
+
+    if (!code.trim()) {
+
+        showError("ابتدا کد Python وارد کن یا یک فایل انتخاب کن.");
+
+        return;
+
+    }
+
+
+
+    analyzeBtn.disabled = true;
+
+    analyzeBtn.textContent = "در حال تحلیل...";
+
+
+
+    try {
+
+        const response = await fetch("/", {
+
+            method: "POST",
+
+            headers: {
+
+                "Content-Type": "application/json",
+
+                "X-CSRFToken": getCookie("csrftoken")
+
+            },
+
+            credentials: "same-origin",
+
+            body: JSON.stringify({ code: code })
+
+        });
+
+
+
+        const data = await response.json();
+
+
+
+        if (!response.ok) {
+
+            throw new Error(data.error || data.message || `خطا در درخواست: ${response.status}`);
+
+        }
+
+
+
+        if (data.error) throw new Error(data.error);
+
+
+
+        const issues = Array.isArray(data.issues) ? data.issues : [];
+
+        document.getElementById("issueCount").textContent =
+
+            formatNumber(data.issue_count ?? issues.length);
+
+
+
+        const syntaxValid = data.syntax_valid;
+
+        const statusElement = document.getElementById("analysisStatus");
+
+        if (syntaxValid === true) {
+
+            statusElement.textContent = "معتبر";
+
+            statusElement.style.color = "#a7f3d0";
+
+        } else if (syntaxValid === false) {
+
+            statusElement.textContent = "دارای خطا";
+
+            statusElement.style.color = "#fecaca";
+
+        } else {
+
+            statusElement.textContent = "بررسی شد";
+
+            statusElement.style.color = "#b8adff";
+
+        }
+
+
+
+        document.getElementById("analyzedFile").textContent =
+
+            selectedFileName || "متن واردشده";
+
+        document.getElementById("summaryMessage").textContent =
+
+            data.summary || "تحلیل کد به پایان رسید.";
+
+
+
+        const summary = document.getElementById("summaryMessage");
+
+        summary.classList.remove("success", "warning");
+
+        if (syntaxValid === true && issues.length === 0) {
+
+            summary.classList.add("success");
+
+        } else if (syntaxValid === false || issues.length > 0) {
+
+            summary.classList.add("warning");
+
+        }
+
+
+
+        renderQuality(data.quality, issues, syntaxValid);
+        renderMetrics(data.stats);
+        renderIssues(issues);
+
+        resultsSection.classList.add("visible");
+
+        resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    } catch (error) {
+
+        showError("تحلیل انجام نشد: " + (error.message || "خطای ناشناخته"));
+
+        console.error("DevLens analysis error:", error);
+
+    } finally {
+
+        analyzeBtn.disabled = false;
+
+        analyzeBtn.textContent = "🔍 تحلیل کد";
+
+    }
+
+});
+
+
+
+updateCodeStats();
+
+</script>
+
+</body>
+
+</html>
